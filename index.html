@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lock For Long - Digital Time Capsule</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container glass-panel">
+            <div class="login-header">
+                <h1>Lock For Long</h1>
+                <p>Sign in to secure your digital time capsule</p>
+            </div>
+            <button id="googleLoginBtn" class="google-btn">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo">
+                Sign in with Google
+            </button>
+            <p class="login-note">Your memories are encrypted and safe.</p>
+        </div>
+    </div>
+
+    <div class="app-container" id="mainApp" style="display: none;">
+        <!-- Main Vault Dashboard -->
+        <div id="dashboardView" class="view-section">
+            <header>
+                <div class="header-top">
+                    <div class="user-profile">
+                        <img id="userAvatar" src="" alt="User" class="avatar" style="display: none;">
+                        <span id="userName">User</span>
+                    </div>
+                    <button id="logoutBtn" class="logout-btn">Logout</button>
+                </div>
+                <h1>Lock For Long</h1>
+                <p class="subtitle">Your Digital Time Capsule</p>
+            </header>
+
+            <div class="vault-status-card glass-panel">
+                <div class="storage-info">
+                    <span>Vault Capacity</span>
+                    <span id="storageUsed">0 B</span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="storageProgressBar" style="width: 1%;"></div>
+                </div>
+            </div>
+
+            <div class="category-grid">
+                <div class="category-card glass-panel" data-type="image">
+                    <div class="cat-icon icon-photos">🖼️</div>
+                    <span class="cat-name">Photos</span>
+                    <span class="cat-count" id="count-image">0</span>
+                </div>
+                <div class="category-card glass-panel" data-type="video">
+                    <div class="cat-icon icon-videos">🎬</div>
+                    <span class="cat-name">Videos</span>
+                    <span class="cat-count" id="count-video">0</span>
+                </div>
+                <div class="category-card glass-panel" data-type="audio">
+                    <div class="cat-icon icon-audio">🎵</div>
+                    <span class="cat-name">Audio</span>
+                    <span class="cat-count" id="count-audio">0</span>
+                </div>
+                <div class="category-card glass-panel" data-type="document">
+                    <div class="cat-icon icon-documents">📄</div>
+                    <span class="cat-name">Documents</span>
+                    <span class="cat-count" id="count-document">0</span>
+                </div>
+                <div class="category-card glass-panel" data-type="apk">
+                    <div class="cat-icon icon-apks">📦</div>
+                    <span class="cat-name">APKs</span>
+                    <span class="cat-count" id="count-apk">0</span>
+                </div>
+                <div class="category-card glass-panel" data-type="archive">
+                    <div class="cat-icon icon-archives">🗄️</div>
+                    <span class="cat-name">Archives</span>
+                    <span class="cat-count" id="count-archive">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Detail View -->
+        <div id="vaultView" class="view-section" style="display: none;">
+            <header class="view-header">
+                <button id="backToDashBtn" class="back-btn">←</button>
+                <h2 id="viewTitle">Category</h2>
+            </header>
+
+            <main>
+                <section id="uploadFormSection" class="upload-section glass-panel" style="display: none;">
+                    <h2>Lock New Secret</h2>
+                    <div class="input-group">
+                        <label for="fileInput">Choose File</label>
+                        <input type="file" id="fileInput">
+                    </div>
+                    <div class="input-group">
+                        <label for="lockTime">Lock Duration</label>
+                        <select id="lockTime">
+                            <option value="1">1 Minute (Test)</option>
+                            <option value="43200">1 Month</option>
+                            <option value="525600">1 Year</option>
+                            <option value="5256000">10 Years</option>
+                            <option value="custom">Custom Date</option>
+                        </select>
+                    </div>
+                    <div class="input-group custom-date-group" style="display: none;">
+                        <label for="customDate">Unlock Date</label>
+                        <input type="datetime-local" id="customDate">
+                    </div>
+                    <button id="lockBtn" class="primary-btn">Seal the Vault</button>
+                </section>
+
+                <div id="vaultList" class="vault-grid">
+                    <!-- Items -->
+                </div>
+            </main>
+        </div>
+
+        <!-- Floating Add Button -->
+        <button id="floatingAddBtn" class="floating-btn">+</button>
+        
+        <!-- Modal -->
+        <div id="imageModal" class="modal">
+            <div class="modal-content glass-panel">
+                <span class="close-btn">&times;</span>
+                <div id="unlockedMediaContainer" class="media-container"></div>
+                <a id="downloadBtn" class="secondary-btn" download="unlocked_file">Download</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
