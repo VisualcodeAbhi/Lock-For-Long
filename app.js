@@ -1,37 +1,22 @@
-// Google Auth Configuration
+// Google & Firebase Configuration
 const GOOGLE_CLIENT_ID = '664114208940-kk82uu7rr9efpv0a6rm07mtv93uq3fek.apps.googleusercontent.com';
+const firebaseConfig = {
+    apiKey: "AIzaSyDVbyEisHJyx9GB1S8wo2--ydl03jl1mIY",
+    authDomain: "lock-for-long-13949.firebaseapp.com",
+    projectId: "lock-for-long-13949",
+    storageBucket: "lock-for-long-13949.firebasestorage.app",
+    messagingSenderId: "23095734146",
+    appId: "1:23095734146:web:e2972b272944aacda6699b",
+    measurementId: "G-N8KLYV537F"
+};
 
-// Database configuration
-const DB_NAME = 'LockOfLongDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'vaultStore';
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const fs = firebase.firestore();
+const storage = firebase.storage();
 
-let db = null;
 let currentUser = null;
 let currentFilter = 'all';
-
-// Initialize IndexedDB
-const initDB = () => {
-    return new Promise((resolve, reject) => {
-        console.log("Initializing Database...");
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onerror = (event) => reject(event.target.errorCode);
-        
-        request.onsuccess = (event) => {
-            db = event.target.result;
-            console.log("Database initialized.");
-            resolve(db);
-        };
-        
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-            }
-        };
-    });
-};
 
 // DOM Elements Helper
 const getEl = (id) => document.getElementById(id);
@@ -53,7 +38,7 @@ const unlockedMediaContainer = getEl('unlockedMediaContainer');
 const downloadBtn = getEl('downloadBtn');
 const loginPage = getEl('loginPage');
 const mainApp = getEl('mainApp');
-const googleLoginBtn = getEl('googleLoginBtn');
+const googleLoginContainer = getEl('googleLoginContainer');
 const logoutBtn = getEl('logoutBtn');
 const userNameDisplay = getEl('userName');
 const userAvatar = getEl('userAvatar');
@@ -62,19 +47,14 @@ const backToDashBtn = getEl('backToDashBtn');
 const storageUsedEl = getEl('storageUsed');
 const storageProgressBar = getEl('storageProgressBar');
 
-// --- Real Google Login Logic ---
+// --- Google Auth Logic ---
 function handleCredentialResponse(response) {
-    // Decode the JWT token to get user info
     const responsePayload = decodeJwtResponse(response.credential);
-
-    console.log("Login Success:", responsePayload.name);
-
     currentUser = {
         name: responsePayload.name,
         email: responsePayload.email,
         photoURL: responsePayload.picture
     };
-
     localStorage.setItem('lockOfLongUser', JSON.stringify(currentUser));
     showApp();
 }
@@ -94,8 +74,6 @@ function initGoogleAuth() {
             client_id: GOOGLE_CLIENT_ID,
             callback: handleCredentialResponse
         });
-        
-        // Render the REAL button into our invisible container
         google.accounts.id.renderButton(
             document.getElementById("googleLoginBtnReal"),
             { theme: "outline", size: "large", width: "320" } 
@@ -103,20 +81,11 @@ function initGoogleAuth() {
     }
 }
 
-// Custom prompt logic (Optional secondary trigger)
-if (googleLoginContainer) {
-    googleLoginContainer.addEventListener('click', () => {
-        console.log("Overlay Clicked");
-        // No extra code needed here as the invisible real button handles it
-    });
-}
-
 if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
         currentUser = null;
         localStorage.removeItem('lockOfLongUser');
-        showLogin();
-        location.reload(); // Refresh to reset Google state
+        location.reload();
     });
 }
 
@@ -158,7 +127,6 @@ const switchView = (viewName, filter = 'all') => {
 };
 
 if (backToDashBtn) backToDashBtn.addEventListener('click', () => switchView('dashboard'));
-
 if (floatingAddBtn) floatingAddBtn.addEventListener('click', () => {
     switchView('vault', 'all');
     uploadFormSection.style.display = 'block';
@@ -167,12 +135,10 @@ if (floatingAddBtn) floatingAddBtn.addEventListener('click', () => {
 });
 
 document.querySelectorAll('.category-card').forEach(card => {
-    card.addEventListener('click', () => {
-        switchView('vault', card.dataset.type);
-    });
+    card.addEventListener('click', () => switchView('vault', card.dataset.type));
 });
 
-// --- File Operations ---
+// --- Cloud File Operations ---
 if (lockTimeSelect) {
     lockTimeSelect.addEventListener('change', (e) => {
         customDateGroup.style.display = e.target.value === 'custom' ? 'flex' : 'none';
@@ -182,7 +148,7 @@ if (lockTimeSelect) {
 if (lockBtn) {
     lockBtn.addEventListener('click', async () => {
         const file = fileInput.files[0];
-        if (!file) return alert("Please select a file.");
+        if (!file) return alert("Select a file.");
 
         let unlockTimeMs;
         if (lockTimeSelect.value === 'custom') {
@@ -193,55 +159,76 @@ if (lockBtn) {
         }
 
         lockBtn.disabled = true;
-        lockBtn.textContent = "Locking...";
+        lockBtn.textContent = "Uploading to Cloud...";
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const item = {
-                filename: file.name,
-                imageData: e.target.result,
-                size: file.size,
-                lockedAt: Date.now(),
-                unlockAt: unlockTimeMs,
-                userEmail: currentUser.email,
-                fileType: file.type || 'application/octet-stream'
-            };
-            await addVaultItemToDB(item);
-            fileInput.value = '';
-            switchView('dashboard');
-            alert("Locked successfully!");
+        try {
+            // 1. Upload to Firebase Storage
+            const storageRef = storage.ref(`vault/${currentUser.email}/${Date.now()}_${file.name}`);
+            const uploadTask = storageRef.put(file);
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                    lockBtn.textContent = `Uploading ${progress}%...`;
+                },
+                (error) => { throw error; },
+                async () => {
+                    // 2. Get Download URL
+                    const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+
+                    // 3. Save Metadata to Firestore
+                    await fs.collection('vaultItems').add({
+                        filename: file.name,
+                        fileUrl: downloadURL,
+                        storagePath: uploadTask.snapshot.ref.fullPath,
+                        size: file.size,
+                        lockedAt: Date.now(),
+                        unlockAt: unlockTimeMs,
+                        userEmail: currentUser.email,
+                        fileType: file.type || 'application/octet-stream'
+                    });
+
+                    fileInput.value = '';
+                    switchView('dashboard');
+                    alert("Locked in the Cloud successfully!");
+                    lockBtn.disabled = false;
+                    lockBtn.textContent = "Seal the Vault";
+                }
+            );
+        } catch (err) {
+            console.error(err);
+            alert("Upload failed. Check if Storage is enabled in Test Mode.");
             lockBtn.disabled = false;
             lockBtn.textContent = "Seal the Vault";
-        };
-        reader.readAsDataURL(file);
+        }
     });
 }
 
-const addVaultItemToDB = (item) => {
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(STORE_NAME);
-        store.add(item).onsuccess = () => resolve();
-    });
+const getVaultItems = async () => {
+    if (!currentUser) return [];
+    const snapshot = await fs.collection('vaultItems')
+        .where('userEmail', '==', currentUser.email)
+        .orderBy('unlockAt', 'asc')
+        .get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-const getVaultItems = () => {
-    return new Promise((resolve) => {
-        if (!db || !currentUser) return resolve([]);
-        const transaction = db.transaction([STORE_NAME], 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.getAll();
-        request.onsuccess = () => {
-            resolve(request.result.filter(item => item.userEmail === currentUser.email));
-        };
-    });
-};
-
-const deleteVaultItem = (id) => {
-    return new Promise((resolve) => {
-        const transaction = db.transaction([STORE_NAME], 'readwrite');
-        transaction.objectStore(STORE_NAME).delete(id).onsuccess = () => resolve();
-    });
+const deleteFile = async (id, storagePath) => {
+    if (confirm("Delete this file from the cloud forever?")) {
+        try {
+            // Delete from Firestore
+            await fs.collection('vaultItems').doc(id).delete();
+            // Delete from Storage
+            if (storagePath) {
+                await storage.ref(storagePath).delete();
+            }
+            loadVaultItems();
+            updateDashboard();
+        } catch (err) {
+            console.error(err);
+            alert("Delete failed.");
+        }
+    }
 };
 
 const updateDashboard = async () => {
@@ -301,7 +288,6 @@ const loadVaultItems = async () => {
         return;
     }
 
-    items.sort((a, b) => a.unlockAt - b.unlockAt);
     items.forEach(item => {
         const isUnlocked = Date.now() >= item.unlockAt;
         const el = document.createElement('div');
@@ -311,11 +297,10 @@ const loadVaultItems = async () => {
             <div class="vault-status">${isUnlocked ? 'Ready' : 'Locked'}</div>
             <div class="countdown" id="cd-${item.id}"></div>
             <button class="unlock-btn" id="btn-${item.id}" ${!isUnlocked ? 'disabled' : ''}>${isUnlocked ? 'Open' : 'Waiting'}</button>
-            ${isUnlocked ? `<button onclick="deleteFile(${item.id})" style="background:none;border:none;color:#ef4444;font-size:0.7rem;margin-top:8px;cursor:pointer;">Delete Forever</button>` : ''}
+            ${isUnlocked ? `<button onclick="deleteFile('${item.id}', '${item.storagePath}')" style="background:none;border:none;color:#ef4444;font-size:0.7rem;margin-top:8px;cursor:pointer;">Delete Forever</button>` : ''}
         `;
         vaultList.appendChild(el);
         updateCD(item.id, item.unlockAt, isUnlocked);
-        
         const btn = el.querySelector(`#btn-${item.id}`);
         if (btn) btn.addEventListener('click', () => openModal(item));
     });
@@ -330,27 +315,19 @@ const updateCD = (id, end, done) => {
     el.textContent = `${d > 0 ? d + 'd ' : ''}${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 };
 
-window.deleteFile = async (id) => {
-    if (confirm("Delete this file forever?")) {
-        await deleteVaultItem(id);
-        loadVaultItems();
-        updateDashboard();
-    }
-};
-
 const openModal = (item) => {
     unlockedMediaContainer.innerHTML = '';
     const type = (item.fileType || '').toLowerCase();
     if (type.startsWith('image/')) {
-        const img = document.createElement('img'); img.src = item.imageData; unlockedMediaContainer.appendChild(img);
+        const img = document.createElement('img'); img.src = item.fileUrl; unlockedMediaContainer.appendChild(img);
     } else if (type.startsWith('video/')) {
-        const v = document.createElement('video'); v.src = item.imageData; v.controls = true; unlockedMediaContainer.appendChild(v);
+        const v = document.createElement('video'); v.src = item.fileUrl; v.controls = true; unlockedMediaContainer.appendChild(v);
     } else if (type.startsWith('audio/')) {
-        const a = document.createElement('audio'); a.src = item.imageData; a.controls = true; unlockedMediaContainer.appendChild(a);
+        const a = document.createElement('audio'); a.src = item.fileUrl; a.controls = true; unlockedMediaContainer.appendChild(a);
     } else {
-        unlockedMediaContainer.innerHTML = '📄 No Preview';
+        unlockedMediaContainer.innerHTML = `<div style="font-size:3rem; margin-bottom:1rem;">📄</div><p>${item.filename}</p>`;
     }
-    downloadBtn.href = item.imageData;
+    downloadBtn.href = item.fileUrl;
     downloadBtn.download = item.filename;
     modal.classList.add('active');
 };
@@ -360,8 +337,7 @@ if (closeBtn) closeBtn.addEventListener('click', closeModal);
 
 // App Initialization
 window.addEventListener('DOMContentLoaded', async () => {
-    await initDB();
-    initGoogleAuth(); // Setup real Google Auth
+    initGoogleAuth();
     const saved = localStorage.getItem('lockOfLongUser');
     if (saved) {
         currentUser = JSON.parse(saved);
