@@ -31,9 +31,13 @@ body {
 .app-container {
     max-width: 600px;
     margin: 0 auto;
-    padding: 5px; /* Global padding as requested */
+    padding: 15px; /* Increased from 7px for better spacing */
     min-height: 100vh;
     position: relative;
+}
+
+.view-section {
+    margin: 15px 0; /* More space between main sections */
 }
 
 header {
@@ -64,6 +68,7 @@ header h1 {
     border-radius: 16px;
     padding: 1.5rem;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+    margin-bottom: 7px;
 }
 
 /* Auth / Header Top */
@@ -133,7 +138,8 @@ header h1 {
 .category-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
+    gap: 15px; /* More space between cards */
+    margin-top: 20px;
 }
 
 .category-card {
