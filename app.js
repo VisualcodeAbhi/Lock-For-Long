@@ -95,22 +95,19 @@ function initGoogleAuth() {
             callback: handleCredentialResponse
         });
         
-        // We use our custom button instead of rendering a standard one
+        // Render the REAL button into our invisible container
+        google.accounts.id.renderButton(
+            document.getElementById("googleLoginBtnReal"),
+            { theme: "outline", size: "large", width: "320" } 
+        );
     }
 }
 
-// Button click triggers the Google prompt
-if (googleLoginBtn) {
-    googleLoginBtn.addEventListener('click', () => {
-        if (typeof google !== 'undefined') {
-            google.accounts.id.prompt(); // Shows the "One Tap" or selection UI
-        } else {
-            // Fallback for simulation if script didn't load
-            console.warn("Google script not loaded, using simulation.");
-            currentUser = { name: "Demo User", email: "demo@gmail.com", photoURL: "https://www.svgrepo.com/show/382097/female-avatar-girl-face-woman-user-9.svg" };
-            localStorage.setItem('lockOfLongUser', JSON.stringify(currentUser));
-            showApp();
-        }
+// Custom prompt logic (Optional secondary trigger)
+if (googleLoginContainer) {
+    googleLoginContainer.addEventListener('click', () => {
+        console.log("Overlay Clicked");
+        // No extra code needed here as the invisible real button handles it
     });
 }
 

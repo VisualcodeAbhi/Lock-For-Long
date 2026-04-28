@@ -422,40 +422,56 @@ select option {
     font-size: 1.1rem;
 }
 
-.google-btn {
+.google-btn-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    height: 50px;
+    margin: 2rem auto;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.google-btn-custom {
+    position: absolute;
+    inset: 0;
     background: rgba(255, 255, 255, 0.95);
     color: #1e293b;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 0.8rem 2rem;
     border-radius: 12px;
     font-size: 1rem;
     font-weight: 600;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 0.8rem;
-    width: 100%;
-    max-width: 320px;
-    margin: 2rem auto;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    pointer-events: none; /* Let clicks pass through to the real button */
+    z-index: 1;
+    transition: all 0.3s ease;
 }
 
-.google-btn:hover {
-    transform: translateY(-2px) scale(1.02);
+#googleLoginBtnReal {
+    position: absolute;
+    inset: 0;
+    opacity: 0.01; /* Almost invisible but still clickable */
+    z-index: 2;
+    cursor: pointer;
+}
+
+#googleLoginBtnReal iframe {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.google-btn-wrapper:hover .google-btn-custom {
+    transform: translateY(-2px);
     background: #ffffff;
     box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
 }
 
-.google-btn:active {
-    transform: translateY(0) scale(0.98);
-}
-
-.google-btn img {
+.google-btn-custom img {
     width: 20px;
     height: 20px;
-    display: block;
 }
 
 @media (max-width: 400px) {
