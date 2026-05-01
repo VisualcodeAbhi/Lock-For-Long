@@ -1,17 +1,24 @@
 // Google & Firebase Configuration
 const GOOGLE_CLIENT_ID = '664114208940-kk82uu7rr9efpv0a6rm07mtv93uq3fek.apps.googleusercontent.com';
 const firebaseConfig = {
-    apiKey: "AIzaSyDVbyEisHJyx9GB1S8wo2--ydl03jl1mIY",
-    authDomain: "lock-for-long-13949.firebaseapp.com",
-    projectId: "lock-for-long-13949",
-    storageBucket: "lock-for-long-13949.firebasestorage.app",
-    messagingSenderId: "23095734146",
-    appId: "1:23095734146:web:e2972b272944aacda6699b",
-    measurementId: "G-N8KLYV537F"
+    apiKey: "AIzaSyBDYzropS8x3YR9LsD2QXlycifIwZsUZAo",
+    authDomain: "lock-app-c912c.firebaseapp.com",
+    projectId: "lock-app-c912c",
+    storageBucket: "lock-app-c912c.firebasestorage.app",
+    messagingSenderId: "887066861006",
+    appId: "1:887066861006:web:3aa275d6956f2b1059df9f",
+    measurementId: "G-VLYG05GBSB"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
+// Initialize Firebase with safety checks
+try {
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+} catch (e) {
+    console.error("Firebase Init Error:", e);
+}
+
 const fs = firebase.firestore();
 const storage = firebase.storage();
 
@@ -49,14 +56,18 @@ const storageProgressBar = getEl('storageProgressBar');
 
 // --- Google Auth Logic ---
 function handleCredentialResponse(response) {
-    const responsePayload = decodeJwtResponse(response.credential);
-    currentUser = {
-        name: responsePayload.name,
-        email: responsePayload.email,
-        photoURL: responsePayload.picture
-    };
-    localStorage.setItem('lockOfLongUser', JSON.stringify(currentUser));
-    showApp();
+    try {
+        const responsePayload = decodeJwtResponse(response.credential);
+        currentUser = {
+            name: responsePayload.name,
+            email: responsePayload.email,
+            photoURL: responsePayload.picture
+        };
+        localStorage.setItem('lockOfLongUser', JSON.stringify(currentUser));
+        showApp();
+    } catch (e) {
+        alert("Login parsing failed: " + e.message);
+    }
 }
 
 function decodeJwtResponse(token) {
@@ -148,7 +159,8 @@ if (lockTimeSelect) {
 if (lockBtn) {
     lockBtn.addEventListener('click', async () => {
         const file = fileInput.files[0];
-        if (!file) return alert("Select a file.");
+        if (!file) return alert("Please select a file.");
+        if (!currentUser) return alert("Session expired. Please log in again.");
 
         let unlockTimeMs;
         if (lockTimeSelect.value === 'custom') {
@@ -159,11 +171,23 @@ if (lockBtn) {
         }
 
         lockBtn.disabled = true;
-        lockBtn.textContent = "Uploading to Cloud...";
+        lockBtn.textContent = "Initializing Cloud...";
 
         try {
+            console.log("Preparing upload for:", currentUser.email);
+            
+            // Set a timeout of 15 seconds
+            const uploadTimeout = setTimeout(() => {
+                if (lockBtn.disabled) {
+                    alert("Upload timed out. Check your Firebase Storage Rules!");
+                    lockBtn.disabled = false;
+                    lockBtn.textContent = "Seal the Vault";
+                }
+            }, 15000);
+
             // 1. Upload to Firebase Storage
-            const storageRef = storage.ref(`vault/${currentUser.email}/${Date.now()}_${file.name}`);
+            const path = `vault/${currentUser.email}/${Date.now()}_${file.name}`;
+            const storageRef = storage.ref(path);
             const uploadTask = storageRef.put(file);
 
             uploadTask.on('state_changed', 
@@ -171,33 +195,44 @@ if (lockBtn) {
                     const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
                     lockBtn.textContent = `Uploading ${progress}%...`;
                 },
-                (error) => { throw error; },
+                (error) => { 
+                    clearTimeout(uploadTimeout);
+                    console.error("STORAGE ERROR:", error.code, error.message);
+                    alert("STORAGE ERROR: " + error.message);
+                    lockBtn.disabled = false;
+                    lockBtn.textContent = "Seal the Vault";
+                },
                 async () => {
-                    // 2. Get Download URL
+                    clearTimeout(uploadTimeout);
+                    console.log("File uploaded, saving record...");
                     const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
 
-                    // 3. Save Metadata to Firestore
+                    // 2. Save Metadata to Firestore
                     await fs.collection('vaultItems').add({
                         filename: file.name,
                         fileUrl: downloadURL,
-                        storagePath: uploadTask.snapshot.ref.fullPath,
+                        storagePath: path,
                         size: file.size,
                         lockedAt: Date.now(),
                         unlockAt: unlockTimeMs,
                         userEmail: currentUser.email,
                         fileType: file.type || 'application/octet-stream'
+                    }).then(() => {
+                        fileInput.value = '';
+                        switchView('dashboard');
+                        alert("Locked in the Cloud successfully!");
+                    }).catch(err => {
+                        console.error("FIRESTORE ERROR:", err);
+                        alert("DATABASE ERROR: " + err.message);
+                    }).finally(() => {
+                        lockBtn.disabled = false;
+                        lockBtn.textContent = "Seal the Vault";
                     });
-
-                    fileInput.value = '';
-                    switchView('dashboard');
-                    alert("Locked in the Cloud successfully!");
-                    lockBtn.disabled = false;
-                    lockBtn.textContent = "Seal the Vault";
                 }
             );
         } catch (err) {
-            console.error(err);
-            alert("Upload failed. Check if Storage is enabled in Test Mode.");
+            console.error("General Upload Error:", err);
+            alert("Critical Error: " + err.message);
             lockBtn.disabled = false;
             lockBtn.textContent = "Seal the Vault";
         }
@@ -206,19 +241,23 @@ if (lockBtn) {
 
 const getVaultItems = async () => {
     if (!currentUser) return [];
-    const snapshot = await fs.collection('vaultItems')
-        .where('userEmail', '==', currentUser.email)
-        .orderBy('unlockAt', 'asc')
-        .get();
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    try {
+        const snapshot = await fs.collection('vaultItems')
+            .where('userEmail', '==', currentUser.email)
+            .get();
+        // Sorting locally to avoid needing a Firestore index for now
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => a.unlockAt - b.unlockAt);
+    } catch (e) {
+        console.error("Fetch Error:", e);
+        return [];
+    }
 };
 
 const deleteFile = async (id, storagePath) => {
     if (confirm("Delete this file from the cloud forever?")) {
         try {
-            // Delete from Firestore
             await fs.collection('vaultItems').doc(id).delete();
-            // Delete from Storage
             if (storagePath) {
                 await storage.ref(storagePath).delete();
             }
