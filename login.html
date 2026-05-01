@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Lock For Long</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-body">
+    <div class="login-page">
+        <div class="login-container glass-panel">
+            <div class="login-header">
+                <h1>Lock For Long</h1>
+                <p>Sign in to secure your digital time capsule</p>
+            </div>
+            
+            <div id="googleLoginContainer" class="google-btn-wrapper">
+                <div class="google-btn-custom">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo">
+                    Sign in with Google
+                </div>
+                <div id="googleLoginBtnReal"></div>
+            </div>
+            
+            <p class="login-note">Your memories are encrypted and safe.</p>
+        </div>
+    </div>
+
+    <script>
+        const GOOGLE_CLIENT_ID = '664114208940-kk82uu7rr9efpv0a6rm07mtv93uq3fek.apps.googleusercontent.com';
+
+        function handleCredentialResponse(response) {
+            const responsePayload = decodeJwtResponse(response.credential);
+            const currentUser = {
+                name: responsePayload.name,
+                email: responsePayload.email,
+                photoURL: responsePayload.picture
+            };
+            localStorage.setItem('lockOfLongUser', JSON.stringify(currentUser));
+            window.location.href = 'index.html'; // Redirect to home
+        }
+
+        function decodeJwtResponse(token) {
+            let base64Url = token.split('.')[1];
+            let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        }
+
+        window.onload = function () {
+            google.accounts.id.initialize({
+                client_id: GOOGLE_CLIENT_ID,
+                callback: handleCredentialResponse
+            });
+            google.accounts.id.renderButton(
+                document.getElementById("googleLoginBtnReal"),
+                { theme: "outline", size: "large", width: "320" } 
+            );
+        };
+    </script>
+</body>
+</html>

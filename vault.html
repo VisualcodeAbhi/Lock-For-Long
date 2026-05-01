@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vault - Lock For Long</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="view-header">
+            <a href="index.html" class="back-btn">←</a>
+            <h1 id="viewTitle">Vault</h1>
+        </header>
+
+        <main>
+            <div id="vaultList" class="vault-grid">
+                <!-- Items will be loaded here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Media Viewer Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content glass-panel">
+            <button class="close-btn">&times;</button>
+            <div id="unlockedMediaContainer"></div>
+            <a id="downloadBtn" href="#" download class="lock-btn" style="margin-top: 1.5rem; text-decoration: none; display: inline-block;">Download to Device</a>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

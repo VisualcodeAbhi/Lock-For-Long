@@ -1,58 +1,59 @@
-// Google & Firebase Configuration
+// Google Configuration
 const GOOGLE_CLIENT_ID = '664114208940-kk82uu7rr9efpv0a6rm07mtv93uq3fek.apps.googleusercontent.com';
-const firebaseConfig = {
-    apiKey: "AIzaSyBDYzropS8x3YR9LsD2QXlycifIwZsUZAo",
-    authDomain: "lock-app-c912c.firebaseapp.com",
-    projectId: "lock-app-c912c",
-    storageBucket: "lock-app-c912c.firebasestorage.app",
-    messagingSenderId: "887066861006",
-    appId: "1:887066861006:web:3aa275d6956f2b1059df9f",
-    measurementId: "G-VLYG05GBSB"
-};
 
-// Initialize Firebase with safety checks
-try {
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-} catch (e) {
-    console.error("Firebase Init Error:", e);
-}
+// Supabase Configuration
+const SUPABASE_URL = 'https://ncfobvlhvdxtbhtmdegv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jZm9idmxodmR4dGJodG1kZWd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzEzNjEsImV4cCI6MjA5MzE0NzM2MX0.FG6u9dCtZu1vOG3qyM7PGBfLWLEVgdOaDo1zKuQX6w8';
 
-const fs = firebase.firestore();
-const storage = firebase.storage();
+let supabaseClient = null;
 
 let currentUser = null;
-let currentFilter = 'all';
 
-// DOM Elements Helper
+// DOM Helper
 const getEl = (id) => document.getElementById(id);
 
-// UI Elements
-const dashboardView = getEl('dashboardView');
-const vaultView = getEl('vaultView');
-const vaultList = getEl('vaultList');
-const uploadFormSection = getEl('uploadFormSection');
-const viewTitle = getEl('viewTitle');
-const fileInput = getEl('fileInput');
-const lockTimeSelect = getEl('lockTime');
-const customDateGroup = document.querySelector('.custom-date-group');
-const customDateInput = getEl('customDate');
-const lockBtn = getEl('lockBtn');
-const modal = getEl('imageModal');
-const closeBtn = document.querySelector('.close-btn');
-const unlockedMediaContainer = getEl('unlockedMediaContainer');
-const downloadBtn = getEl('downloadBtn');
-const loginPage = getEl('loginPage');
-const mainApp = getEl('mainApp');
-const googleLoginContainer = getEl('googleLoginContainer');
+// Custom Toast Notification
+function showToast(message, icon = "🚀") {
+    let toast = getEl('customToast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'customToast';
+        toast.className = 'glass-toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<span class="toast-icon">${icon}</span> <span>${message}</span>`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// --- Session Management ---
+function checkAuth() {
+    const saved = localStorage.getItem('lockOfLongUser');
+    if (!saved && !window.location.href.includes('login.html')) {
+        window.location.href = 'login.html';
+    } else if (saved) {
+        currentUser = JSON.parse(saved);
+        updateUserUI();
+    }
+}
+
+function updateUserUI() {
+    const nameEl = getEl('userName');
+    const avatarEl = getEl('userAvatar');
+    if (nameEl) nameEl.textContent = currentUser.name;
+    if (avatarEl) {
+        avatarEl.src = currentUser.photoURL;
+        avatarEl.style.display = 'block';
+    }
+}
+
 const logoutBtn = getEl('logoutBtn');
-const userNameDisplay = getEl('userName');
-const userAvatar = getEl('userAvatar');
-const floatingAddBtn = getEl('floatingAddBtn');
-const backToDashBtn = getEl('backToDashBtn');
-const storageUsedEl = getEl('storageUsed');
-const storageProgressBar = getEl('storageProgressBar');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        localStorage.removeItem('lockOfLongUser');
+        window.location.href = 'login.html';
+    });
+}
 
 // --- Google Auth Logic ---
 function handleCredentialResponse(response) {
@@ -64,9 +65,9 @@ function handleCredentialResponse(response) {
             photoURL: responsePayload.picture
         };
         localStorage.setItem('lockOfLongUser', JSON.stringify(currentUser));
-        showApp();
+        window.location.href = 'index.html';
     } catch (e) {
-        alert("Login parsing failed: " + e.message);
+        console.error("JWT Decode Error:", e);
     }
 }
 
@@ -79,198 +80,21 @@ function decodeJwtResponse(token) {
     return JSON.parse(jsonPayload);
 }
 
-function initGoogleAuth() {
-    if (typeof google !== 'undefined') {
+window.onload = function () {
+    if (typeof google !== 'undefined' && getEl('googleLoginBtnReal')) {
         google.accounts.id.initialize({
             client_id: GOOGLE_CLIENT_ID,
             callback: handleCredentialResponse
         });
         google.accounts.id.renderButton(
-            document.getElementById("googleLoginBtnReal"),
+            getEl("googleLoginBtnReal"),
             { theme: "outline", size: "large", width: "320" } 
         );
     }
-}
-
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        currentUser = null;
-        localStorage.removeItem('lockOfLongUser');
-        location.reload();
-    });
-}
-
-const showApp = () => {
-    if (!currentUser) return showLogin();
-    loginPage.style.display = 'none';
-    mainApp.style.display = 'block';
-    userNameDisplay.textContent = currentUser.name;
-    userAvatar.src = currentUser.photoURL;
-    userAvatar.style.display = 'inline-block';
-    updateDashboard();
-    switchView('dashboard');
 };
 
-const showLogin = () => {
-    loginPage.style.display = 'flex';
-    mainApp.style.display = 'none';
-};
-
-// --- Navigation ---
-const switchView = (viewName, filter = 'all') => {
-    if (viewName === 'dashboard') {
-        dashboardView.style.display = 'block';
-        vaultView.style.display = 'none';
-        floatingAddBtn.style.display = 'flex';
-        uploadFormSection.style.display = 'none';
-        vaultList.style.display = 'grid';
-        updateDashboard();
-    } else {
-        dashboardView.style.display = 'none';
-        vaultView.style.display = 'block';
-        floatingAddBtn.style.display = 'none';
-        currentFilter = filter;
-        viewTitle.textContent = filter.charAt(0).toUpperCase() + filter.slice(1);
-        uploadFormSection.style.display = 'none';
-        vaultList.style.display = 'grid';
-        loadVaultItems();
-    }
-};
-
-if (backToDashBtn) backToDashBtn.addEventListener('click', () => switchView('dashboard'));
-if (floatingAddBtn) floatingAddBtn.addEventListener('click', () => {
-    switchView('vault', 'all');
-    uploadFormSection.style.display = 'block';
-    vaultList.style.display = 'none';
-    viewTitle.textContent = "Lock New Secret";
-});
-
-document.querySelectorAll('.category-card').forEach(card => {
-    card.addEventListener('click', () => switchView('vault', card.dataset.type));
-});
-
-// --- Cloud File Operations ---
-if (lockTimeSelect) {
-    lockTimeSelect.addEventListener('change', (e) => {
-        customDateGroup.style.display = e.target.value === 'custom' ? 'flex' : 'none';
-    });
-}
-
-if (lockBtn) {
-    lockBtn.addEventListener('click', async () => {
-        const file = fileInput.files[0];
-        if (!file) return alert("Please select a file.");
-        if (!currentUser) return alert("Session expired. Please log in again.");
-
-        let unlockTimeMs;
-        if (lockTimeSelect.value === 'custom') {
-            unlockTimeMs = new Date(customDateInput.value).getTime();
-            if (isNaN(unlockTimeMs) || unlockTimeMs <= Date.now()) return alert("Select a future date.");
-        } else {
-            unlockTimeMs = Date.now() + (parseInt(lockTimeSelect.value) * 60 * 1000);
-        }
-
-        lockBtn.disabled = true;
-        lockBtn.textContent = "Initializing Cloud...";
-
-        try {
-            console.log("Preparing upload for:", currentUser.email);
-            
-            // Set a timeout of 15 seconds
-            const uploadTimeout = setTimeout(() => {
-                if (lockBtn.disabled) {
-                    alert("Upload timed out. Check your Firebase Storage Rules!");
-                    lockBtn.disabled = false;
-                    lockBtn.textContent = "Seal the Vault";
-                }
-            }, 15000);
-
-            // 1. Upload to Firebase Storage
-            const path = `vault/${currentUser.email}/${Date.now()}_${file.name}`;
-            const storageRef = storage.ref(path);
-            const uploadTask = storageRef.put(file);
-
-            uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                    lockBtn.textContent = `Uploading ${progress}%...`;
-                },
-                (error) => { 
-                    clearTimeout(uploadTimeout);
-                    console.error("STORAGE ERROR:", error.code, error.message);
-                    alert("STORAGE ERROR: " + error.message);
-                    lockBtn.disabled = false;
-                    lockBtn.textContent = "Seal the Vault";
-                },
-                async () => {
-                    clearTimeout(uploadTimeout);
-                    console.log("File uploaded, saving record...");
-                    const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
-
-                    // 2. Save Metadata to Firestore
-                    await fs.collection('vaultItems').add({
-                        filename: file.name,
-                        fileUrl: downloadURL,
-                        storagePath: path,
-                        size: file.size,
-                        lockedAt: Date.now(),
-                        unlockAt: unlockTimeMs,
-                        userEmail: currentUser.email,
-                        fileType: file.type || 'application/octet-stream'
-                    }).then(() => {
-                        fileInput.value = '';
-                        switchView('dashboard');
-                        alert("Locked in the Cloud successfully!");
-                    }).catch(err => {
-                        console.error("FIRESTORE ERROR:", err);
-                        alert("DATABASE ERROR: " + err.message);
-                    }).finally(() => {
-                        lockBtn.disabled = false;
-                        lockBtn.textContent = "Seal the Vault";
-                    });
-                }
-            );
-        } catch (err) {
-            console.error("General Upload Error:", err);
-            alert("Critical Error: " + err.message);
-            lockBtn.disabled = false;
-            lockBtn.textContent = "Seal the Vault";
-        }
-    });
-}
-
-const getVaultItems = async () => {
-    if (!currentUser) return [];
-    try {
-        const snapshot = await fs.collection('vaultItems')
-            .where('userEmail', '==', currentUser.email)
-            .get();
-        // Sorting locally to avoid needing a Firestore index for now
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-            .sort((a, b) => a.unlockAt - b.unlockAt);
-    } catch (e) {
-        console.error("Fetch Error:", e);
-        return [];
-    }
-};
-
-const deleteFile = async (id, storagePath) => {
-    if (confirm("Delete this file from the cloud forever?")) {
-        try {
-            await fs.collection('vaultItems').doc(id).delete();
-            if (storagePath) {
-                await storage.ref(storagePath).delete();
-            }
-            loadVaultItems();
-            updateDashboard();
-        } catch (err) {
-            console.error(err);
-            alert("Delete failed.");
-        }
-    }
-};
-
-const updateDashboard = async () => {
+// --- Dashboard Logic ---
+async function updateDashboard() {
     const items = await getVaultItems();
     const counts = { image: 0, video: 0, audio: 0, document: 0, apk: 0, archive: 0 };
     let totalSize = 0;
@@ -292,69 +116,198 @@ const updateDashboard = async () => {
     }
 
     const sizeFormatted = formatBytes(totalSize);
+    const storageUsedEl = getEl('storageUsed');
     if (storageUsedEl) storageUsedEl.textContent = `${sizeFormatted} / 64 GB`;
     const percent = Math.min((totalSize / (64 * 1024 * 1024 * 1024)) * 100, 100) || 1;
+    const storageProgressBar = getEl('storageProgressBar');
     if (storageProgressBar) storageProgressBar.style.width = percent + '%';
-};
+}
 
-const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
+// --- Supabase Upload Logic ---
+const lockBtn = getEl('lockBtn');
+if (lockBtn) {
+    const fileInput = getEl('fileInput');
+    const lockTimeSelect = getEl('lockTime');
+    const customDateInput = getEl('customDate');
+    const customDateGroup = document.querySelector('.custom-date-group');
 
-const loadVaultItems = async () => {
+    if (lockTimeSelect) {
+        lockTimeSelect.addEventListener('change', (e) => {
+            customDateGroup.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+        });
+    }
+
+    lockBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file) return showToast("Please select a file.", "📂");
+        if (!supabaseClient) return showToast("Supabase is not initialized yet.", "⚠️");
+
+        let unlockTimeMs;
+        if (lockTimeSelect.value === 'custom') {
+            unlockTimeMs = new Date(customDateInput.value).getTime();
+            if (isNaN(unlockTimeMs) || unlockTimeMs <= Date.now()) return showToast("Select a future date.", "⏳");
+        } else {
+            unlockTimeMs = Date.now() + (parseInt(lockTimeSelect.value) * 60 * 1000);
+        }
+
+        lockBtn.disabled = true;
+        lockBtn.textContent = "Uploading to Cloud...";
+
+        try {
+            // 1. Upload to Supabase Storage
+            const filePath = `${currentUser.email}/${Date.now()}_${file.name}`;
+            const { data: uploadData, error: uploadError } = await supabaseClient
+                .storage
+                .from('vault')
+                .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+            if (uploadError) throw new Error("Storage Upload Failed: " + uploadError.message);
+
+            // 2. Get Public URL
+            const { data: urlData } = supabaseClient.storage.from('vault').getPublicUrl(filePath);
+            const publicURL = urlData.publicUrl;
+
+            // 3. Save Record to Database
+            lockBtn.textContent = "Saving Record...";
+            const { error: dbError } = await supabaseClient
+                .from('vault_items')
+                .insert([
+                    {
+                        filename: file.name,
+                        file_url: publicURL,
+                        size: file.size,
+                        locked_at: Date.now(),
+                        unlock_at: unlockTimeMs,
+                        user_email: currentUser.email,
+                        file_type: file.type || 'application/octet-stream'
+                    }
+                ]);
+
+            if (dbError) throw new Error("Database Save Failed: " + dbError.message);
+
+            showToast("Successfully locked in the Vault!", "💎");
+            setTimeout(() => {
+                window.location.href = 'index.html'; // Redirect back home
+            }, 1800);
+        } catch (err) {
+            showToast(err.message, "⚠️");
+            lockBtn.disabled = false;
+            lockBtn.textContent = "Seal the Vault";
+        }
+    });
+}
+
+// --- Vault Logic ---
+const vaultList = getEl('vaultList');
+async function loadVaultItems() {
+    if (!vaultList) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const filter = urlParams.get('type') || 'all';
+    const viewTitle = getEl('viewTitle');
+    if (viewTitle) viewTitle.textContent = filter.charAt(0).toUpperCase() + filter.slice(1);
+
     let items = await getVaultItems();
-    vaultList.innerHTML = '';
     
-    if (currentFilter !== 'all') {
+    if (filter !== 'all') {
         items = items.filter(item => {
             const type = (item.fileType || '').toLowerCase();
-            if (currentFilter === 'image') return type.startsWith('image/');
-            if (currentFilter === 'video') return type.startsWith('video/');
-            if (currentFilter === 'audio') return type.startsWith('audio/');
-            if (currentFilter === 'document') return type.includes('pdf') || type.includes('word') || type.includes('text');
-            if (currentFilter === 'apk') return item.filename.toLowerCase().endsWith('.apk');
-            if (currentFilter === 'archive') return type.includes('zip') || type.includes('rar');
+            if (filter === 'image') return type.startsWith('image/');
+            if (filter === 'video') return type.startsWith('video/');
+            if (filter === 'audio') return type.startsWith('audio/');
+            if (filter === 'document') return type.includes('pdf') || type.includes('word') || type.includes('text');
+            if (filter === 'apk') return item.filename.toLowerCase().endsWith('.apk');
+            if (filter === 'archive') return type.includes('zip') || type.includes('rar');
             return false;
         });
     }
 
+    vaultList.innerHTML = '';
     if (items.length === 0) {
-        vaultList.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; margin-top: 2rem;">Vault is empty.</p>';
+        vaultList.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #94a3b8; margin-top: 4rem;">No items found.</p>';
         return;
     }
 
     items.forEach(item => {
         const isUnlocked = Date.now() >= item.unlockAt;
         const el = document.createElement('div');
-        el.className = `vault-item ${isUnlocked ? 'vault-unlocked' : 'vault-locked'}`;
+        el.className = `vault-item glass-panel ${isUnlocked ? 'vault-unlocked' : 'vault-locked'}`;
         el.innerHTML = `
             <div class="vault-icon">${isUnlocked ? '🔓' : '🔒'}</div>
             <div class="vault-status">${isUnlocked ? 'Ready' : 'Locked'}</div>
             <div class="countdown" id="cd-${item.id}"></div>
             <button class="unlock-btn" id="btn-${item.id}" ${!isUnlocked ? 'disabled' : ''}>${isUnlocked ? 'Open' : 'Waiting'}</button>
-            ${isUnlocked ? `<button onclick="deleteFile('${item.id}', '${item.storagePath}')" style="background:none;border:none;color:#ef4444;font-size:0.7rem;margin-top:8px;cursor:pointer;">Delete Forever</button>` : ''}
+            ${isUnlocked ? `<button onclick="deleteFileRecord('${item.id}')" style="background:none;border:none;color:#ef4444;font-size:0.7rem;margin-top:12px;cursor:pointer;opacity:0.6;">Delete Record</button>` : ''}
         `;
         vaultList.appendChild(el);
         updateCD(item.id, item.unlockAt, isUnlocked);
         const btn = el.querySelector(`#btn-${item.id}`);
         if (btn) btn.addEventListener('click', () => openModal(item));
     });
+}
+
+// Global scope for onclick
+window.deleteFileRecord = async (id) => {
+    if (confirm("Delete this record forever?")) {
+        const { error } = await supabaseClient.from('vault_items').delete().eq('id', id);
+        if (error) {
+            showToast("Delete failed: " + error.message, "⚠️");
+        } else {
+            showToast("Record permanently deleted.", "🗑️");
+            loadVaultItems();
+        }
+    }
 };
 
-const updateCD = (id, end, done) => {
+// --- Utilities ---
+async function getVaultItems() {
+    if (!currentUser || !supabaseClient) return [];
+    try {
+        const { data, error } = await supabaseClient
+            .from('vault_items')
+            .select('*')
+            .eq('user_email', currentUser.email)
+            .order('unlock_at', { ascending: true });
+            
+        if (error) throw error;
+        
+        return data.map(item => ({
+            id: item.id,
+            filename: item.filename,
+            fileUrl: item.file_url,
+            size: item.size,
+            lockedAt: item.locked_at,
+            unlockAt: item.unlock_at,
+            fileType: item.file_type
+        }));
+    } catch (e) {
+        console.error("Fetch Error:", e);
+        return [];
+    }
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function updateCD(id, end, done) {
     const el = getEl(`cd-${id}`);
-    if (!el) return;
-    if (done) return el.textContent = '00:00:00';
-    const dist = end - Date.now();
-    const d = Math.floor(dist / 86400000), h = Math.floor((dist % 86400000) / 3600000), m = Math.floor((dist % 3600000) / 60000), s = Math.floor((dist % 60000) / 1000);
-    el.textContent = `${d > 0 ? d + 'd ' : ''}${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-};
+    if (!el || done) return;
+    setInterval(() => {
+        const dist = end - Date.now();
+        if (dist <= 0) { el.textContent = '00:00:00'; return; }
+        const d = Math.floor(dist / 86400000), h = Math.floor((dist % 86400000) / 3600000), m = Math.floor((dist % 3600000) / 60000), s = Math.floor((dist % 60000) / 1000);
+        el.textContent = `${d > 0 ? d + 'd ' : ''}${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+}
 
-const openModal = (item) => {
+const modal = getEl('imageModal');
+const unlockedMediaContainer = getEl('unlockedMediaContainer');
+const downloadBtn = getEl('downloadBtn');
+
+function openModal(item) {
+    if (!unlockedMediaContainer) return;
     unlockedMediaContainer.innerHTML = '';
     const type = (item.fileType || '').toLowerCase();
     if (type.startsWith('image/')) {
@@ -367,21 +320,34 @@ const openModal = (item) => {
         unlockedMediaContainer.innerHTML = `<div style="font-size:3rem; margin-bottom:1rem;">📄</div><p>${item.filename}</p>`;
     }
     downloadBtn.href = item.fileUrl;
-    downloadBtn.download = item.filename;
     modal.classList.add('active');
-};
+}
 
-const closeModal = () => { modal.classList.remove('active'); unlockedMediaContainer.innerHTML = ''; };
-if (closeBtn) closeBtn.addEventListener('click', closeModal);
+const closeBtn = document.querySelector('.close-btn');
+if (closeBtn && modal) {
+    closeBtn.addEventListener('click', () => {
+        modal.classList.remove('active');
+        if (unlockedMediaContainer) unlockedMediaContainer.innerHTML = '';
+    });
+}
 
-// App Initialization
-window.addEventListener('DOMContentLoaded', async () => {
-    initGoogleAuth();
-    const saved = localStorage.getItem('lockOfLongUser');
-    if (saved) {
-        currentUser = JSON.parse(saved);
-        showApp();
+// Init
+window.addEventListener('DOMContentLoaded', () => {
+    if (window.supabase) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } else {
-        showLogin();
+        console.error("Supabase SDK failed to load.");
+    }
+
+    checkAuth();
+    
+    const path = window.location.pathname;
+    const isHome = path.endsWith('/') || path.endsWith('index.html') || path === '';
+    const isVault = path.includes('vault.html');
+
+    if (isHome) {
+        updateDashboard();
+    } else if (isVault) {
+        loadVaultItems();
     }
 });

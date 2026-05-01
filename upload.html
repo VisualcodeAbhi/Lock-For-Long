@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lock Secret - Lock For Long</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="view-header">
+            <a href="index.html" class="back-btn">←</a>
+            <h1 id="viewTitle">Lock New Secret</h1>
+        </header>
+
+        <main>
+            <section id="uploadFormSection" class="upload-section glass-panel">
+                <div class="form-group">
+                    <label>Choose File</label>
+                    <input type="file" id="fileInput" class="file-input">
+                </div>
+                
+                <div class="form-group">
+                    <label>Lock Duration</label>
+                    <select id="lockTime" class="glass-select">
+                        <option value="1">1 Minute (Test)</option>
+                        <option value="1440">1 Day</option>
+                        <option value="10080">1 Week</option>
+                        <option value="43200">1 Month</option>
+                        <option value="525600">1 Year</option>
+                        <option value="custom">Pick Specific Date</option>
+                    </select>
+                </div>
+
+                <div class="form-group custom-date-group" style="display: none;">
+                    <label>Unlock Date</label>
+                    <input type="datetime-local" id="customDate" class="glass-input">
+                </div>
+
+                <button id="lockBtn" class="lock-btn">Seal the Vault</button>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

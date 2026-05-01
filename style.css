@@ -1,488 +1,460 @@
 :root {
-    --bg-color: #0f172a;
-    --glass-bg: rgba(30, 41, 59, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.1);
     --primary: #8b5cf6;
-    --primary-hover: #7c3aed;
+    --primary-glow: rgba(139, 92, 246, 0.4);
+    --secondary: #ec4899;
+    --bg-dark: #0f172a;
+    --glass: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
     --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --danger: #ef4444;
-    --success: #10b981;
+    --text-dim: #94a3b8;
 }
 
 * {
-    box-sizing: border-box;
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+    font-family: 'Outfit', sans-serif;
 }
 
 body {
-    font-family: 'Outfit', sans-serif;
-    background-color: var(--bg-color);
-    background-image: 
-        radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-        radial-gradient(at 50% 0%, hsla(225,39%,30%,0.2) 0, transparent 50%), 
-        radial-gradient(at 100% 0%, hsla(339,49%,30%,0.2) 0, transparent 50%);
+    background: var(--bg-dark);
     color: var(--text-main);
     min-height: 100vh;
-    padding: 0;
+    overflow-x: hidden;
+    background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+    padding: 15px; /* Premium spacing from edges */
+}
+
+/* Auth Pages Background */
+.auth-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.glass-panel {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
 }
 
 .app-container {
     max-width: 600px;
     margin: 0 auto;
-    padding: 15px; /* Increased from 7px for better spacing */
-    min-height: 100vh;
-    position: relative;
 }
 
-.view-section {
-    margin: 15px 0; /* More space between main sections */
-}
-
+/* Header */
 header {
-    text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 32px;
+    padding-top: 20px;
 }
 
-header h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #a78bfa, #c084fc);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.subtitle {
-    color: var(--text-muted);
-    font-size: 1rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-.glass-panel {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
-    margin-bottom: 7px;
-}
-
-/* Auth / Header Top */
 .header-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 24px;
 }
 
 .user-profile {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .avatar {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: 2px solid var(--primary);
+    box-shadow: 0 0 15px var(--primary-glow);
 }
 
 .logout-btn {
-    background: transparent;
-    border: 1px solid var(--danger);
-    color: var(--danger);
-    padding: 0.3rem 0.7rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    color: var(--text-dim);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: 0.3s;
 }
 
 .logout-btn:hover {
-    background: var(--danger);
     color: white;
+    background: rgba(255,255,255,0.1);
 }
 
-/* Status Card */
-.vault-status-card {
-    margin-bottom: 2rem;
+h1 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    background: linear-gradient(to right, #fff, var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
+.subtitle {
+    color: var(--text-dim);
+    font-size: 1rem;
+}
+
+/* Storage Card */
 .storage-info {
+    margin-bottom: 24px;
+}
+
+.storage-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.75rem;
+    margin-bottom: 12px;
     font-size: 0.9rem;
-    color: var(--text-muted);
+    font-weight: 600;
 }
 
-.progress-container {
+.progress-bar {
     height: 8px;
-    background: rgba(0,0,0,0.3);
+    background: rgba(255,255,255,0.05);
     border-radius: 4px;
     overflow: hidden;
 }
 
-.progress-bar {
+.progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary), #c084fc);
-    transition: width 0.5s ease;
+    background: linear-gradient(to right, var(--primary), var(--secondary));
+    box-shadow: 0 0 10px var(--primary-glow);
+    transition: width 1s ease-in-out;
 }
 
 /* Category Grid */
 .category-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px; /* More space between cards */
-    margin-top: 20px;
+    gap: 12px; /* Slightly tighter gap for 3 columns */
 }
 
 .category-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1.2rem 0.5rem;
     cursor: pointer;
-    transition: all 0.3s ease;
     text-align: center;
+    transition: 0.3s;
+    position: relative;
+    overflow: hidden;
+    padding: 16px 12px; /* Reduced height/padding */
 }
 
 .category-card:hover {
     transform: translateY(-5px);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255,255,255,0.08);
+    border-color: var(--primary);
 }
 
 .cat-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.8rem; /* Reduced icon size */
+    margin-bottom: 8px;
 }
 
 .cat-name {
-    font-size: 0.9rem;
+    display: block;
     font-weight: 600;
+    font-size: 0.85rem; /* Slightly smaller text */
+    margin-bottom: 2px;
 }
 
 .cat-count {
-    font-size: 0.75rem;
-    color: var(--text-muted);
+    font-size: 0.8rem;
+    color: var(--text-dim);
 }
 
-/* Vault Grid */
+/* View Header (Back Button) */
 .view-header {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 16px;
+    margin-bottom: 32px;
 }
 
 .back-btn {
-    background: var(--glass-bg);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass);
     border: 1px solid var(--glass-border);
-    color: white;
-    width: 40px;
-    height: 40px;
     border-radius: 50%;
-    font-size: 1.2rem;
-    cursor: pointer;
+    color: white;
+    text-decoration: none;
+    font-size: 1.5rem;
+    transition: 0.3s;
 }
 
+.back-btn:hover {
+    background: var(--primary);
+    box-shadow: 0 0 20px var(--primary-glow);
+}
+
+/* Upload Form */
+.upload-section {
+    padding: 32px;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.glass-input, .glass-select, .file-input {
+    width: 100%;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 14px;
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    transition: 0.3s;
+}
+
+.file-input {
+    padding: 10px;
+}
+
+.glass-input:focus, .glass-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.lock-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    border: none;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
+    color: white;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: 0.4s;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.lock-btn:hover:not(:disabled) {
+    transform: scale(1.02);
+    box-shadow: 0 0 30px var(--primary-glow);
+}
+
+.lock-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #475569;
+}
+
+/* Vault Items */
 .vault-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px;
 }
 
 .vault-item {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    padding: 0.75rem 0.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     text-align: center;
+    padding: 20px;
+    position: relative;
 }
 
 .vault-icon {
-    font-size: 1.5rem;
-    margin-bottom: 0.4rem;
+    font-size: 2rem;
+    margin-bottom: 12px;
 }
-
-.vault-locked .vault-icon { color: var(--danger); }
-.vault-unlocked .vault-icon { color: var(--success); }
 
 .vault-status {
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 8px;
 }
 
+.vault-unlocked .vault-status { color: #4ade80; }
+.vault-locked .vault-status { color: #94a3b8; }
+
 .countdown {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    margin: 0.4rem 0;
+    font-family: monospace;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
 }
 
 .unlock-btn {
-    background: var(--primary);
-    border: none;
-    color: white;
-    padding: 0.4rem 0.2rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
     width: 100%;
-    cursor: pointer;
-}
-
-.unlock-btn:disabled {
-    background: rgba(255,255,255,0.1);
-    color: var(--text-muted);
-}
-
-/* Floating Button */
-.floating-btn {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: var(--primary);
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
     color: white;
-    font-size: 2.2rem;
-    border: none;
-    box-shadow: 0 10px 20px rgba(139, 92, 246, 0.4);
-    cursor: pointer;
-    z-index: 100;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    line-height: 1;
-    padding: 0;
-}
-
-/* Upload Form Centering */
-#vaultView {
-    display: flex;
-    flex-direction: column;
-    min-height: 90vh;
-}
-
-#vaultView main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.upload-section {
-    margin: 1rem auto;
-    width: 100%;
-    max-width: 450px;
-    animation: fadeInUp 0.5s ease-out;
-}
-
-.input-group {
-    margin-bottom: 1rem;
-    display: flex;
-    flex-direction: column;
-}
-
-.input-group label {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: 0.4rem;
-}
-
-input[type="file"], select, input[type="datetime-local"] {
-    background: rgba(139, 92, 246, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
-    padding: 0.8rem;
-    border-radius: 12px;
-    font-family: inherit;
-    outline: none;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-input:focus, select:focus {
-    background: rgba(139, 92, 246, 0.2);
-    border-color: var(--primary);
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
-}
-
-select option {
-    background: #1e1b4b; /* Deep indigo for dropdown items */
-    color: white;
-}
-
-.primary-btn {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 0.8rem;
+    padding: 10px;
     border-radius: 8px;
-    font-weight: 600;
-    width: 100%;
     cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.vault-unlocked .unlock-btn {
+    background: var(--primary);
+    border: none;
 }
 
 /* Modal */
 .modal {
-    display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(8px);
-    z-index: 1000;
-    justify-content: center;
+    background: rgba(0,0,0,0.9);
+    display: flex;
     align-items: center;
-    padding: 1.5rem;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.3s;
+    padding: 20px;
 }
 
-.modal.active { display: flex; }
+.modal.active {
+    opacity: 1;
+    pointer-events: all;
+}
 
 .modal-content {
-    max-width: 500px;
-    width: 100%;
+    max-width: 90%;
+    max-height: 90%;
+    position: relative;
     text-align: center;
+}
+
+.modal-content img, .modal-content video {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 12px;
 }
 
 .close-btn {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 36px;
-    height: 36px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    top: -40px;
+    right: 0;
+    background: none;
+    border: none;
     color: white;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+/* Floating FAB */
+.floating-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(45deg, var(--primary), var(--secondary));
     border-radius: 50%;
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-size: 1.4rem;
-    cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
-    z-index: 1010;
-}
-
-.close-btn:hover {
-    background: var(--danger);
-    border-color: var(--danger);
-    transform: scale(1.1);
-}
-
-.media-container img, .media-container video {
-    max-width: 100%;
-    border-radius: 12px;
-}
-
-.secondary-btn {
-    display: inline-block;
-    background: white;
-    color: black;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
     text-decoration: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 8px;
-    font-weight: 600;
-    margin-top: 1rem;
+    box-shadow: 0 8px 25px var(--primary-glow);
+    transition: 0.3s;
+    z-index: 100;
 }
 
-/* Login Page */
+.floating-btn:hover {
+    transform: rotate(90deg) scale(1.1);
+}
+
+/* Login Page Specific */
 .login-page {
-    position: fixed;
-    inset: 0;
-    background: var(--bg-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
-    z-index: 2000;
-}
-
-.login-container {
-    text-align: center;
+    width: 100%;
     max-width: 400px;
-    width: 90%;
 }
 
-.login-header h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #a78bfa, #c084fc);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.5rem;
-}
-
-.login-header p {
-    color: var(--text-muted);
-    font-size: 1.1rem;
+.login-header {
+    text-align: center;
+    margin-bottom: 32px;
 }
 
 .google-btn-wrapper {
     position: relative;
-    width: 100%;
-    max-width: 320px;
-    height: 50px;
-    margin: 2rem auto;
-    overflow: hidden;
-    border-radius: 12px;
+    margin-bottom: 24px;
 }
 
 .google-btn-custom {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.95);
-    color: #1e293b;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.8rem;
-    pointer-events: none; /* Let clicks pass through to the real button */
-    z-index: 1;
-    transition: all 0.3s ease;
+    gap: 12px;
+    background: white;
+    color: #334155;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.google-btn-custom img {
+    width: 24px;
 }
 
 #googleLoginBtnReal {
     position: absolute;
-    inset: 0;
-    opacity: 0.01; /* Almost invisible but still clickable */
-    z-index: 2;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.01;
     cursor: pointer;
 }
 
-#googleLoginBtnReal iframe {
-    width: 100% !important;
-    height: 100% !important;
+.login-note {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.8rem;
 }
 
-.google-btn-wrapper:hover .google-btn-custom {
-    transform: translateY(-2px);
-    background: #ffffff;
-    box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+/* Custom Glass Toast Notifications */
+.glass-toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: rgba(139, 92, 246, 0.2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 100px;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 9999;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
-
-.google-btn-custom img {
-    width: 20px;
-    height: 20px;
+.glass-toast.show {
+    transform: translateX(-50%) translateY(0);
 }
-
-@media (max-width: 400px) {
-    .app-container { padding: 1rem; }
-    header h1 { font-size: 2rem; }
-    .cat-icon { font-size: 1.5rem; }
-    .cat-name { font-size: 0.8rem; }
+.toast-icon {
+    font-size: 1.2rem;
 }
