@@ -350,4 +350,11 @@ window.addEventListener('DOMContentLoaded', () => {
     } else if (isVault) {
         loadVaultItems();
     }
+
+    // Register PWA Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+            .then(() => console.log('PWA Service Worker Registered!'))
+            .catch(err => console.error('PWA Registration Failed:', err));
+    }
 });
