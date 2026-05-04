@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="./logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.1">
 </head>
 <body class="auth-body">
     <div class="login-page">
@@ -26,8 +26,16 @@
                 </div>
                 <div id="googleLoginBtnReal"></div>
             </div>
+
+            <div class="separator">
+                <span>OR</span>
+            </div>
+
+            <button id="guestLoginBtn" class="guest-btn">
+                <span>👤</span> Continue as Guest
+            </button>
             
-            <p class="login-note">Your memories are encrypted and safe.</p>
+            <p class="login-note">Google login may be unavailable on some mobile devices. Use Guest mode to test.</p>
         </div>
     </div>
 
@@ -42,8 +50,97 @@
                 photoURL: responsePayload.picture
             };
             localStorage.setItem('lockOfLongUser', JSON.stringify(currentUser));
-            window.location.href = 'index.html'; // Redirect to home
+            window.location.href = 'index.html'; 
         }
+
+        // Guest Login Handler
+        document.getElementById('guestLoginBtn').addEventListener('click', () => {
+            const guestUser = {
+                name: "Guest User",
+                email: "guest@example.com",
+                photoURL: "https://ui-avatars.com/api/?name=Guest+User&background=8b5cf6&color=fff"
+            };
+            localStorage.setItem('lockOfLongUser', JSON.stringify(guestUser));
+            window.location.href = 'index.html';
+        });
+
+            window.location.href = './index.html'; 
+        }
+
+        // Handle Login (Web or Native)
+        async function initiateLogin() {
+            // alert("initiateLogin() called!"); 
+            if (window.Capacitor && window.Capacitor.Plugins.GoogleAuth) {
+                try {
+                    // alert("Starting Native Google Sign-In...");
+                    const user = await window.Capacitor.Plugins.GoogleAuth.signIn();
+                    // alert("Sign-In Success: " + user.email);
+                    const currentUser = {
+                        name: user.givenName + " " + user.familyName,
+                        email: user.email,
+                        photoURL: user.imageUrl
+                    };
+                    localStorage.setItem('lockOfLongUser', JSON.stringify(currentUser));
+                    window.location.href = './index.html';
+                } catch (err) {
+                    console.error("Native Google Login Failed:", err);
+                    alert("Login Error: " + (err.message || JSON.stringify(err)));
+                }
+            } else {
+                alert("Plugin not found. Are you on mobile?");
+            }
+        }
+
+        window.onload = function () {
+            // alert("Page Loaded. Checking for Capacitor...");
+            
+            // Native Initialization
+            if (window.Capacitor && window.Capacitor.Plugins.GoogleAuth) {
+                // alert("Capacitor & GoogleAuth Plugin detected!");
+                try {
+                    window.Capacitor.Plugins.GoogleAuth.initialize();
+                    const googleBtn = document.getElementById('googleLoginContainer');
+                    if (googleBtn) {
+                        googleBtn.style.opacity = '1';
+                        googleBtn.style.border = '2px solid #8b5cf6'; // Highlight as enabled
+                        googleBtn.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            initiateLogin();
+                        }, true); // Use capture phase
+                    }
+                } catch (e) {
+                    alert("Init Error: " + e.message);
+                }
+                return;
+            }
+
+            // Web Initialization
+            if (typeof google !== 'undefined') {
+                google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleCredentialResponse
+                });
+                google.accounts.id.renderButton(
+                    document.getElementById("googleLoginBtnReal"),
+                    { theme: "outline", size: "large", width: "320" } 
+                );
+            } else {
+                const googleBtn = document.getElementById('googleLoginContainer');
+                if (googleBtn) googleBtn.style.opacity = '0.5';
+            }
+        };
+
+        // Guest Login Handler
+        document.getElementById('guestLoginBtn').addEventListener('click', () => {
+            const guestUser = {
+                name: "Guest User",
+                email: "guest@example.com",
+                photoURL: "https://ui-avatars.com/api/?name=Guest+User&background=8b5cf6&color=fff"
+            };
+            localStorage.setItem('lockOfLongUser', JSON.stringify(guestUser));
+            window.location.href = './index.html';
+        });
 
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];
@@ -53,17 +150,6 @@
             }).join(''));
             return JSON.parse(jsonPayload);
         }
-
-        window.onload = function () {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleCredentialResponse
-            });
-            google.accounts.id.renderButton(
-                document.getElementById("googleLoginBtnReal"),
-                { theme: "outline", size: "large", width: "320" } 
-            );
-        };
     </script>
 </body>
 </html>

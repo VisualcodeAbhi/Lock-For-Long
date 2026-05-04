@@ -1,0 +1,12 @@
+{
+  "appId": "com.lockforlong.app",
+  "appName": "Lock for Long",
+  "webDir": "www",
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "664114208940-kk82uu7rr9efpv0a6rm07mtv93uq3fek.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
+}

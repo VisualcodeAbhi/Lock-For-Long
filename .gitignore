@@ -1,0 +1,12 @@
+node_modules/
+www/
+android/
+local.properties
+.DS_Store
+*.apk
+.gradle
+build/
+exclude.txt
+assets/
+icon.png
+only_lock.png

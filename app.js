@@ -138,8 +138,8 @@ if (lockBtn) {
     }
 
     lockBtn.addEventListener('click', async () => {
-        const file = fileInput.files[0];
-        if (!file) return showToast("Please select a file.", "📂");
+        const files = fileInput.files;
+        if (files.length === 0) return showToast("Please select at least one file.", "📂");
         if (!supabaseClient) return showToast("Supabase is not initialized yet.", "⚠️");
 
         let unlockTimeMs;
@@ -151,43 +151,46 @@ if (lockBtn) {
         }
 
         lockBtn.disabled = true;
-        lockBtn.textContent = "Uploading to Cloud...";
-
+        
         try {
-            // 1. Upload to Supabase Storage
-            const filePath = `${currentUser.email}/${Date.now()}_${file.name}`;
-            const { data: uploadData, error: uploadError } = await supabaseClient
-                .storage
-                .from('vault')
-                .upload(filePath, file, { cacheControl: '3600', upsert: false });
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                lockBtn.textContent = `Uploading (${i + 1}/${files.length})...`;
 
-            if (uploadError) throw new Error("Storage Upload Failed: " + uploadError.message);
+                // 1. Upload to Supabase Storage
+                const filePath = `${currentUser.email}/${Date.now()}_${file.name}`;
+                const { data: uploadData, error: uploadError } = await supabaseClient
+                    .storage
+                    .from('vault')
+                    .upload(filePath, file, { cacheControl: '3600', upsert: false });
 
-            // 2. Get Public URL
-            const { data: urlData } = supabaseClient.storage.from('vault').getPublicUrl(filePath);
-            const publicURL = urlData.publicUrl;
+                if (uploadError) throw new Error(`Upload Failed for ${file.name}: ${uploadError.message}`);
 
-            // 3. Save Record to Database
-            lockBtn.textContent = "Saving Record...";
-            const { error: dbError } = await supabaseClient
-                .from('vault_items')
-                .insert([
-                    {
-                        filename: file.name,
-                        file_url: publicURL,
-                        size: file.size,
-                        locked_at: Date.now(),
-                        unlock_at: unlockTimeMs,
-                        user_email: currentUser.email,
-                        file_type: file.type || 'application/octet-stream'
-                    }
-                ]);
+                // 2. Get Public URL
+                const { data: urlData } = supabaseClient.storage.from('vault').getPublicUrl(filePath);
+                const publicURL = urlData.publicUrl;
 
-            if (dbError) throw new Error("Database Save Failed: " + dbError.message);
+                // 3. Save Record to Database
+                const { error: dbError } = await supabaseClient
+                    .from('vault_items')
+                    .insert([
+                        {
+                            filename: file.name,
+                            file_url: publicURL,
+                            size: file.size,
+                            locked_at: Date.now(),
+                            unlock_at: unlockTimeMs,
+                            user_email: currentUser.email,
+                            file_type: file.type || 'application/octet-stream'
+                        }
+                    ]);
 
-            showToast("Successfully locked in the Vault!", "💎");
+                if (dbError) throw new Error(`Database Save Failed for ${file.name}: ${dbError.message}`);
+            }
+
+            showToast(`${files.length} items successfully locked!`, "💎");
             setTimeout(() => {
-                window.location.href = 'index.html'; // Redirect back home
+                window.location.href = 'index.html';
             }, 1800);
         } catch (err) {
             showToast(err.message, "⚠️");
