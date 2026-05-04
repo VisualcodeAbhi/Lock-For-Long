@@ -404,6 +404,7 @@ h1 {
 .google-btn-wrapper {
     position: relative;
     margin-bottom: 24px;
+    cursor: pointer;
 }
 
 .google-btn-custom {
@@ -416,7 +417,6 @@ h1 {
     padding: 14px;
     border-radius: 12px;
     font-weight: 700;
-    pointer-events: none;
 }
 
 .google-btn-custom img {
