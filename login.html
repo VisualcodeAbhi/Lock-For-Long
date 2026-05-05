@@ -53,19 +53,6 @@
             window.location.href = 'index.html'; 
         }
 
-        // Guest Login Handler
-        document.getElementById('guestLoginBtn').addEventListener('click', () => {
-            const guestUser = {
-                name: "Guest User",
-                email: "guest@example.com",
-                photoURL: "https://ui-avatars.com/api/?name=Guest+User&background=8b5cf6&color=fff"
-            };
-            localStorage.setItem('lockOfLongUser', JSON.stringify(guestUser));
-            window.location.href = 'index.html';
-        });
-
-            window.location.href = './index.html'; 
-        }
 
         // Handle Login (Web or Native)
         async function initiateLogin() {
