@@ -124,47 +124,108 @@ async function updateDashboard() {
 }
 
 // --- Supabase Upload Logic ---
+let nativeSelectedFiles = [];
 const lockBtn = getEl('lockBtn');
 if (lockBtn) {
     const fileInput = getEl('fileInput');
     const lockTimeSelect = getEl('lockTime');
     const customDateInput = getEl('customDate');
     const customDateGroup = document.querySelector('.custom-date-group');
+    
+    const nativePickBtn = getEl('nativePickBtn');
+    const nativeFileList = getEl('nativeFileList');
+    const webFilePickerContainer = getEl('webFilePickerContainer');
+
+    // Initialize Native File Picker if on Android/iOS
+    if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+        if (webFilePickerContainer) webFilePickerContainer.style.display = 'none';
+        if (nativePickBtn) {
+            nativePickBtn.style.display = 'flex';
+            nativePickBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    const result = await window.Capacitor.Plugins.FilePicker.pickFiles({ multiple: true });
+                    nativeSelectedFiles = result.files;
+                    if (nativeFileList) {
+                        nativeFileList.style.display = 'block';
+                        nativeFileList.textContent = `${nativeSelectedFiles.length} file(s) selected`;
+                    }
+                } catch (err) {
+                    console.error('File pick error:', err);
+                }
+            });
+        }
+    }
 
     if (lockTimeSelect) {
         lockTimeSelect.addEventListener('change', (e) => {
             customDateGroup.style.display = e.target.value === 'custom' ? 'flex' : 'none';
         });
+
+        // Load previously used lock settings
+        const lastLockTime = localStorage.getItem('lastUsedLockTime');
+        const lastCustomDate = localStorage.getItem('lastUsedCustomDate');
+        
+        if (lastLockTime) {
+            lockTimeSelect.value = lastLockTime;
+            if (lastLockTime === 'custom' && lastCustomDate) {
+                customDateInput.value = lastCustomDate;
+                customDateGroup.style.display = 'flex';
+            } else {
+                customDateGroup.style.display = 'none';
+            }
+        }
     }
 
     lockBtn.addEventListener('click', async () => {
-        const files = fileInput.files;
-        if (files.length === 0) return showToast("Please select at least one file.", "📂");
+        const isNative = window.Capacitor && window.Capacitor.isNativePlatform();
+        const filesToUpload = isNative ? nativeSelectedFiles : Array.from(fileInput.files);
+        
+        if (filesToUpload.length === 0) return showToast("Please select at least one file.", "📂");
         if (!supabaseClient) return showToast("Supabase is not initialized yet.", "⚠️");
 
         let unlockTimeMs;
-        if (lockTimeSelect.value === 'custom') {
-            unlockTimeMs = new Date(customDateInput.value).getTime();
+        const selectedLockTime = lockTimeSelect.value;
+        
+        if (selectedLockTime === 'custom') {
+            const pickedDate = customDateInput.value;
+            unlockTimeMs = new Date(pickedDate).getTime();
             if (isNaN(unlockTimeMs) || unlockTimeMs <= Date.now()) return showToast("Select a future date.", "⏳");
+            
+            // Save custom settings for next time
+            localStorage.setItem('lastUsedLockTime', 'custom');
+            localStorage.setItem('lastUsedCustomDate', pickedDate);
         } else {
-            unlockTimeMs = Date.now() + (parseInt(lockTimeSelect.value) * 60 * 1000);
+            unlockTimeMs = Date.now() + (parseInt(selectedLockTime) * 60 * 1000);
+            localStorage.setItem('lastUsedLockTime', selectedLockTime);
         }
 
         lockBtn.disabled = true;
         
         try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                lockBtn.textContent = `Uploading (${i + 1}/${files.length})...`;
+            for (let i = 0; i < filesToUpload.length; i++) {
+                let file = filesToUpload[i];
+                let uploadFileObj = file;
+                const fileName = file.name;
+                const fileSize = file.size;
+                const fileType = file.type || file.mimeType || 'application/octet-stream';
+                
+                // If it's a native file, fetch the Blob first
+                if (isNative && file.webPath) {
+                    const res = await fetch(file.webPath);
+                    uploadFileObj = await res.blob();
+                }
+
+                lockBtn.textContent = `Uploading (${i + 1}/${filesToUpload.length})...`;
 
                 // 1. Upload to Supabase Storage
-                const filePath = `${currentUser.email}/${Date.now()}_${file.name}`;
+                const filePath = `${currentUser.email}/${Date.now()}_${fileName}`;
                 const { data: uploadData, error: uploadError } = await supabaseClient
                     .storage
                     .from('vault')
-                    .upload(filePath, file, { cacheControl: '3600', upsert: false });
+                    .upload(filePath, uploadFileObj, { cacheControl: '3600', upsert: false });
 
-                if (uploadError) throw new Error(`Upload Failed for ${file.name}: ${uploadError.message}`);
+                if (uploadError) throw new Error(`Upload Failed for ${fileName}: ${uploadError.message}`);
 
                 // 2. Get Public URL
                 const { data: urlData } = supabaseClient.storage.from('vault').getPublicUrl(filePath);
@@ -175,20 +236,20 @@ if (lockBtn) {
                     .from('vault_items')
                     .insert([
                         {
-                            filename: file.name,
+                            filename: fileName,
                             file_url: publicURL,
-                            size: file.size,
+                            size: fileSize,
                             locked_at: Date.now(),
                             unlock_at: unlockTimeMs,
                             user_email: currentUser.email,
-                            file_type: file.type || 'application/octet-stream'
+                            file_type: fileType
                         }
                     ]);
 
-                if (dbError) throw new Error(`Database Save Failed for ${file.name}: ${dbError.message}`);
+                if (dbError) throw new Error(`Database Save Failed for ${fileName}: ${dbError.message}`);
             }
 
-            showToast(`${files.length} items successfully locked!`, "💎");
+            showToast(`${filesToUpload.length} items successfully locked!`, "💎");
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 1800);

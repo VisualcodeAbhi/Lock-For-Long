@@ -31,7 +31,7 @@
                 <span>OR</span>
             </div>
 
-            <button id="guestLoginBtn" class="guest-btn">
+            <button id="guestLoginBtn" class="guest-btn" onclick="alert('Guest tapped!'); guestLogin();">
                 <span>👤</span> Continue as Guest
             </button>
             
@@ -85,7 +85,11 @@
             if (window.Capacitor && window.Capacitor.Plugins.GoogleAuth) {
                 // alert("Capacitor & GoogleAuth Plugin detected!");
                 try {
-                    window.Capacitor.Plugins.GoogleAuth.initialize();
+                    window.Capacitor.Plugins.GoogleAuth.initialize({
+                        clientId: GOOGLE_CLIENT_ID,
+                        scopes: ['profile', 'email'],
+                        grantOfflineAccess: true
+                    });
                     const googleBtn = document.getElementById('googleLoginContainer');
                     if (googleBtn) {
                         googleBtn.style.opacity = '1';
@@ -119,15 +123,19 @@
         };
 
         // Guest Login Handler
-        document.getElementById('guestLoginBtn').addEventListener('click', () => {
-            const guestUser = {
-                name: "Guest User",
-                email: "guest@example.com",
-                photoURL: "https://ui-avatars.com/api/?name=Guest+User&background=8b5cf6&color=fff"
-            };
-            localStorage.setItem('lockOfLongUser', JSON.stringify(guestUser));
-            window.location.href = './index.html';
-        });
+        function guestLogin() {
+            try {
+                const guestUser = {
+                    name: "Guest User",
+                    email: "guest@example.com",
+                    photoURL: "https://ui-avatars.com/api/?name=Guest+User&background=8b5cf6&color=fff"
+                };
+                localStorage.setItem('lockOfLongUser', JSON.stringify(guestUser));
+                window.location.href = 'index.html';
+            } catch (e) {
+                alert("Guest Login Error: " + e.message);
+            }
+        }
 
         function decodeJwtResponse(token) {
             let base64Url = token.split('.')[1];

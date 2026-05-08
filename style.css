@@ -233,6 +233,26 @@ h1 {
     font-size: 1rem;
     outline: none;
     transition: 0.3s;
+    color-scheme: dark; /* Makes the OS datepicker & icons dark */
+}
+
+/* Custom styling for the select dropdown */
+.glass-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+    cursor: pointer;
+    padding-right: 40px; /* Room for the arrow */
+}
+
+.glass-select option {
+    background-color: #0f172a; /* Matches --bg-dark */
+    color: white;
+    padding: 10px;
 }
 
 .file-input {
